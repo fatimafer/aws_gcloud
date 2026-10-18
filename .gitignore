@@ -4,4 +4,8 @@
 /conversion_dat_parquet/log/
 /conversion_dat_parquet/fallos/
 /.aws/
+/.aws/config
+/.aws/credentials
+/.aws/redshift.json
 /.gcloud/
+/.gcloud/adc.json
