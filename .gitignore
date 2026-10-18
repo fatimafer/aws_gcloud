@@ -1,0 +1,5 @@
+/.idea/
+/conversion_dat_parquet/procesados/
+/conversion_dat_parquet/parquet/
+/conversion_dat_parquet/log/
+/conversion_dat_parquet/fallos/
