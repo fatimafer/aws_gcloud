@@ -7,7 +7,7 @@ from utilities import procesar_archivos_en_carpeta, upload_file_s3, search_files
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Procesar archivos .dat y convertirlos a Parquet con clasificación por fecha.")
+        description="Procesar archivos .csv y convertirlos a Parquet con clasificación por fecha.")
     parser.add_argument("carpeta", help="Ruta a la carpeta que contiene los archivos .dat")
     parser.add_argument("--delimiter", default="|", help="Delimitador de los archivos")
     parser.add_argument("--encoding", default="utf-8", help="Codificación de los archivos")
@@ -17,10 +17,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    is_parquet = args.carpeta.endswith("parquet")
+
     folder, archivos_csv = search_files_in_folder(args.folder, args.carpeta, args.fecha)
 
-    for archivo_dat in archivos_csv:
-        parquet_dir, ruta_salida = procesar_archivos_en_carpeta(args.carpeta, archivo_dat, args.delimiter, args.encoding, args.folder, parquet_format=True)
+    for archivo_csv in archivos_csv:
+        parquet_dir, ruta_salida = procesar_archivos_en_carpeta(args.carpeta, archivo_csv, args.delimiter, args.encoding
+                                                                , args.folder, is_parquet)
         logging.info("Archivo .parquet guardado en: %s", parquet_dir)
 
         nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))

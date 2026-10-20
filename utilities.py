@@ -40,12 +40,15 @@ def mover_archivo(origen, destino):
 
 
 
-def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding="utf-8",bucket_name="default",parquet_format=True, extension=".dat"):
+def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding="utf-8"
+                                 , cloud_folder="default", parquet_format=False):
 
     ruta_entrada = os.path.join(input_folder, archivo)
     fecha = datetime.now().strftime("%Y%m%d")
 
-    local_output_dir = os.path.join(input_folder, "parquet", fecha)
+    formato = "parquet" if parquet_format else "csv"
+
+    local_output_dir = os.path.join(input_folder, formato, fecha)
     procesados_dir = os.path.join(input_folder, "procesados", fecha)
     fallos_dir = os.path.join(input_folder, "fallos", fecha)
 
@@ -54,7 +57,7 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
     os.makedirs(fallos_dir, exist_ok=True)
 
     nombre_base = os.path.splitext(archivo)[0]
-    ruta_salida = os.path.join(local_output_dir, f"{nombre_base}.parquet")
+    ruta_salida = os.path.join(local_output_dir, f"{nombre_base}.{formato}")
 
     try:
         df = pd.read_csv(
@@ -65,7 +68,8 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
             engine="python"
         )
 
-        df = df[df['Room Type'] == bucket_name]
+        if cloud_folder != "Guests":
+            df = df[df['Room Type'] == cloud_folder]
 
         if parquet_format==True:
             df.to_parquet(
