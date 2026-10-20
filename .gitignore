@@ -4,7 +4,7 @@
 /conversion_dat_parquet/log/
 /conversion_dat_parquet/fallos/
 /conversion_dat_csv/procesados/
-/conversion_dat_csv/parquet/
+/conversion_dat_csv/csv/
 /conversion_dat_csv/log/
 /conversion_dat_csv/fallos/
 /.aws/
