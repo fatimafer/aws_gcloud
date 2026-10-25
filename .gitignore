@@ -7,9 +7,3 @@
 /conversion_dat_csv/csv/
 /conversion_dat_csv/log/
 /conversion_dat_csv/fallos/
-/.aws/
-/.aws/config
-/.aws/credentials
-/.aws/redshift.json
-/.gcloud/
-/.gcloud/adc.json
