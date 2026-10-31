@@ -37,3 +37,7 @@ FROM coral_cloud_demo.stg_reservations_deluxe;
 
 -- 4. Quitar la tabla intermedia, para que Data 360 solo vea la tabla final
 DROP TABLE coral_cloud_demo.stg_reservations_deluxe;
+
+
+-- 5. Crear un dataset temporal para pruebas de Data 360.
+CREATE SCHEMA `sf_temp_dataset` OPTIONS (location = 'europe-southwest1');
