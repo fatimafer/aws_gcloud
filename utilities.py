@@ -41,7 +41,7 @@ def mover_archivo(origen, destino):
 
 
 def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding="utf-8"
-                                 , cloud_folder="default", parquet_format=False):
+                                 , cloud_folder="default", parquet_format=False, move_processed=True):
 
     ruta_entrada = os.path.join(input_folder, archivo)
     fecha = datetime.now().strftime("%Y%m%d")
@@ -89,17 +89,16 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
 
 
         logging.info(f"CONVERTIDO: {archivo} -> {ruta_salida}")
-        mover_archivo(ruta_entrada, os.path.join(procesados_dir, archivo))
+        mover_archivo(ruta_entrada, os.path.join(procesados_dir, archivo)) if move_processed == True else None
+
     except Exception as e:
         logging.error(f"ERROR en {archivo}: {str(e)}")
-        mover_archivo(ruta_entrada, os.path.join(fallos_dir, archivo))
+        mover_archivo(ruta_entrada, os.path.join(fallos_dir, archivo)) if move_processed == True else None
 
     return local_output_dir, ruta_salida
 
 
 def upload_file_gcloud_storage(bucket_name, source_file_name, destination_blob_name):
-
-    # Upload the file
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
@@ -112,11 +111,9 @@ def upload_file_gcloud_storage(bucket_name, source_file_name, destination_blob_n
     return True
 
 def upload_file_s3(file_name, bucket, object_name=None):
-
     # If S3 object_name was not specified, use file_name
     if object_name is None:
         object_name = os.path.basename(file_name)
-
     # Upload the file
     s3_client = boto3.client('s3')
     try:
@@ -130,7 +127,8 @@ def upload_file_s3(file_name, bucket, object_name=None):
 def search_files_in_folder(bucket_folder, source_folder, file_date):
     folder = bucket_folder + "_hotelbookings/"
 
-    archivos_csv = [f for f in os.listdir(source_folder) if f.lower().endswith(".csv")]
+    sufijo = "guests.csv" if bucket_folder == "Guests" else "reservations.csv"
+    archivos_csv = [f for f in os.listdir(source_folder) if f.lower().endswith(sufijo)]
 
     if not archivos_csv:
         logging.warning("No se encontraron archivos .csv en %s", source_folder)
