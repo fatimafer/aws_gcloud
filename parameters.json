@@ -1,0 +1,30 @@
+{
+    "TARGETS": {
+            "s3": {
+                    "bucket": "coral-cloud-demo-reservations" ,
+                    "output_formats": {
+                                        "CSV": {
+                                                  "carpeta": "conversion_dat_csv",
+                                                  "folder": "Standard"
+                                        },
+                                        "PARQUET": {
+                                                  "carpeta": "conversion_dat_parquet",
+                                                  "folder": "Suite"
+                                        }
+                    }
+                },
+            "GCS": {
+                              "bucket": "coral-cloud-demo" ,
+                              "output_formats": {
+                                                  "CSV": {
+                                                            "carpeta": "conversion_dat_csv",
+                                                            "folder": "Guests"
+                                                          },
+                                                  "PARQUET": {
+                                                            "carpeta": "conversion_dat_parquet",
+                                                            "folder": "Deluxe"
+                                                  }
+                              }
+            }
+    }
+}
