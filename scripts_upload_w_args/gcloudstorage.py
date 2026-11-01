@@ -2,7 +2,7 @@ import os
 import argparse
 import logging
 from datetime import datetime
-from utilities import procesar_archivos_en_carpeta, upload_file_gcloud_storage, search_files_in_folder
+from utilities import procesar_archivos_en_carpeta, process_gcloud_storage, search_files_in_folder
 
 #Ejecutar con
 # set GCLOUD_PROJECT=coral-cloud
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
         try:
-            if upload_file_gcloud_storage(args.bucket, ruta_salida, nombre_objeto):
+            if process_gcloud_storage(args.bucket, ruta_salida, nombre_objeto):
                 logging.info("Archivo subido a Google Cloud Storage: %s/%s", args.bucket, nombre_objeto)
         except Exception as e:
             logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))

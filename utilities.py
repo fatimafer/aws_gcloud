@@ -98,19 +98,28 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
     return local_output_dir, ruta_salida
 
 
-def upload_file_gcloud_storage(bucket_name, source_file_name, destination_blob_name):
+def process_gcloud_storage(bucket_name, source_file_name=None, destination_blob_name=None, action=None, fecha=None):
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
 
-    try:
-        blob.upload_from_filename(source_file_name)
-    except Exception as e:
-        logging.error(e)
-        return False
-    return True
+    if action == "create":
+        blob = bucket.blob(destination_blob_name)
+        try:
+            blob.upload_from_filename(source_file_name)
+        except Exception as e:
+            logging.error(e)
+            return False
+        return True
 
-def upload_file_s3(file_name, bucket, object_name=None):
+    else:
+        blobs = storage_client.list_blobs(bucket.name)
+        for blob in blobs:
+            blob = bucket.blob(blob.name)
+            logging.info(f"Blob {blob} will be deleted.")
+            blob.delete()
+
+
+def process_s3(file_name, bucket, object_name=None):
     # If S3 object_name was not specified, use file_name
     if object_name is None:
         object_name = os.path.basename(file_name)
