@@ -117,8 +117,14 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
 
 
 def process_gcloud_storage(bucket_name, source_file_name,  action=None, destination_blob_name=None):
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
+
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        logging.info("Google Cloud Storage client created successfully for bucket: %s", bucket_name)
+    except Exception as e:
+        logging.error("Failed to create Google Cloud Storage client: %s", str(e))
+        return
 
     if action == "create":
         try:
@@ -148,6 +154,12 @@ def upload_file_s3(file_name, bucket, object_name=None):
             object_name = os.path.basename(file_name)
         # Upload the file
         s3_client = boto3.client('s3')
+        logging.info("S3 client created successfully for bucket: %s", bucket)
+    except Exception  as e:
+        logging.error("Failed to create S3 client: %s", str(e))
+        return
+
+    try:
         s3_client.upload_file(file_name, bucket, object_name)
         logging.info("Files uploaded to s3: %s/%s", bucket, object_name)
     except Exception as e:
@@ -160,7 +172,7 @@ def delete_file_s3(bucket_name, source_file_name):
         bucket = s3.Bucket(bucket_name)
 
         for object_summary in bucket.objects.all():
-            # Los "directorios" en S3 son objetos vacíos cuya clave termina en "/"
+            # Se omiten los objetos que son directorios
             if object_summary.key.endswith('/'):
                 continue
             if object_summary.key.lower().startswith(source_file_name.lower()):
@@ -186,7 +198,7 @@ def execute_bq(QUERY, action):
         logging.error(f"Error occurred while creating BigQuery client: {e}")
 
     try:
-        query_job = client.query(QUERY)
+        client.query(QUERY)
         logging.info("Query executed in BigQuery successfully for action: %s", action)
     except Exception as e:
         logging.error(f"Error occurred while executing query: {e}")
@@ -199,7 +211,7 @@ def execute_redshift(workgroup, database, secret, QUERY, action):
         logging.error(f"Error occurred while creating Redshift client: {e}")
 
     try:
-        statement = client.execute_statement(
+        client.execute_statement(
             WorkgroupName=workgroup,
             Database=database,
             SecretArn=secret,
