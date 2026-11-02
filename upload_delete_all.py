@@ -19,7 +19,7 @@ import logging
 import json
 from datetime import datetime
 
-from utilities import procesar_archivos_en_carpeta, process_s3, process_gcloud_storage, search_files_in_folder, configurar_logger
+from utilities import procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder, configurar_logger, delete_file_s3
 
 if __name__ == "__main__":
 
@@ -54,6 +54,13 @@ if __name__ == "__main__":
             logging.info("Log de conversión será guardado en: %s", log_file)
 
             if args.action != "create":
+                if target == "s3":
+                    try:
+                        delete_file_s3(bucket, bucket_folder)
+                        logging.info("Archivos borrados en s3: %s", bucket)
+                    except Exception  as e:
+                        logging.error("Error al borrar en s3: %s", str(e))
+
                 if target == "GCS":
                     try:
                         process_gcloud_storage(bucket, bucket_folder, args.action)
@@ -73,7 +80,7 @@ if __name__ == "__main__":
 
                     if target == "s3":
                         try:
-                            process_s3(ruta_salida, bucket, nombre_objeto)
+                            upload_file_s3(ruta_salida, bucket, nombre_objeto)
                             logging.info("Archivo subido a s3: %s/%s", bucket, nombre_objeto)
                         except Exception as e:
                             logging.error("Error al subir el archivo a s3: %s", str(e))

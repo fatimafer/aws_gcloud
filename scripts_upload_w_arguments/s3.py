@@ -2,7 +2,7 @@ import os
 import argparse
 import logging
 from datetime import datetime
-from utilities import procesar_archivos_en_carpeta, process_s3, search_files_in_folder, configurar_logger
+from utilities import procesar_archivos_en_carpeta, upload_file_s3, search_files_in_folder, configurar_logger
 
 if __name__ == "__main__":
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
         try:
-            process_s3(ruta_salida, args.bucket, nombre_objeto)
+            upload_file_s3(ruta_salida, args.bucket, nombre_objeto)
             logging.info("Archivo subido a S3: %s/%s", args.bucket, nombre_objeto)
         except Exception as e:
             logging.error("Error al subir el archivo a S3: %s", str(e))

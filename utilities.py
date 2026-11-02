@@ -37,7 +37,23 @@ def mover_archivo(origen, destino):
     os.makedirs(os.path.dirname(destino), exist_ok=True)
     shutil.move(origen, destino)
 
+def search_files_in_folder(bucket_folder, source_folder):
+    folder = bucket_folder + "_hotelbookings/"
 
+    sufijo = "guests.csv" if bucket_folder == "Guests" else "reservations.csv"
+    archivos_csv = [f for f in os.listdir(source_folder) if f.lower().endswith(sufijo)]
+
+    if not archivos_csv:
+        logging.warning("No se encontraron archivos .csv en %s", source_folder)
+        exit(0)
+
+    return folder, archivos_csv
+
+
+def read_query(file):
+    with open(file, mode="r", encoding="utf-8") as cf:
+        QUERY = cf.read()
+    return QUERY
 
 
 def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding="utf-8"
@@ -115,11 +131,11 @@ def process_gcloud_storage(bucket_name, source_file_name,  action=None, destinat
         blobs = storage_client.list_blobs(bucket.name)
         for blob in blobs:
             blob = bucket.blob(blob.name)
-            logging.info(f"Blob {blob.name} will be deleted.") if blob.name.lower().startswith(source_file_name.lower()) else None
+            logging.info(f"File {blob.name} will be deleted.") if blob.name.lower().startswith(source_file_name.lower()) else None
             blob.delete() if blob.name.lower().startswith(source_file_name.lower()) else None
 
 
-def process_s3(file_name, bucket, object_name=None):
+def upload_file_s3(file_name, bucket, object_name=None):
     # If S3 object_name was not specified, use file_name
     if object_name is None:
         object_name = os.path.basename(file_name)
@@ -133,19 +149,16 @@ def process_s3(file_name, bucket, object_name=None):
     return True
 
 
-def search_files_in_folder(bucket_folder, source_folder):
-    folder = bucket_folder + "_hotelbookings/"
+def delete_file_s3(bucket_name, source_file_name):
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(bucket_name)
 
-    sufijo = "guests.csv" if bucket_folder == "Guests" else "reservations.csv"
-    archivos_csv = [f for f in os.listdir(source_folder) if f.lower().endswith(sufijo)]
+    for object_summary in bucket.objects.all():
+        # Los "directorios" en S3 son objetos vacíos cuya clave termina en "/"
+        if object_summary.key.endswith('/'):
+            continue
+        logging.info(f"File {object_summary.key} will be deleted") if object_summary.key.lower().startswith(source_file_name.lower()) else None
+        object_summary.delete() if object_summary.key.lower().startswith(source_file_name.lower()) else None
 
-    if not archivos_csv:
-        logging.warning("No se encontraron archivos .csv en %s", source_folder)
-        exit(0)
 
-    return folder, archivos_csv
 
-def read_query(file):
-    with open(file, mode="r", encoding="utf-8") as cf:
-        QUERY = cf.read()
-    return QUERY
