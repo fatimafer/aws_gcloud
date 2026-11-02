@@ -18,8 +18,10 @@ import argparse
 import logging
 import json
 from datetime import datetime
+from google.cloud import bigquery
+import boto3
 
-from utilities import procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder, configurar_logger, delete_file_s3
+from utilities import procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder, configurar_logger, delete_file_s3, read_query
 
 if __name__ == "__main__":
 
@@ -92,5 +94,52 @@ if __name__ == "__main__":
                         except Exception as e:
                             logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))
 
+
+    #Ejecutar la acción en BigQuery
+    QUERY = read_query(f"Scripts_sql/{args.action}_bigquery.sql")
+
+    carpeta = 'Scripts_sql'
+    log_file = configurar_logger(carpeta, fecha)
+    logging.info("Log de conversión será guardado en: %s", log_file)
+
+    try:
+        client = bigquery.Client()
+    except Exception as e:
+        logging.error(f"Error occurred while creating BigQuery client: {e}")
+
+    try:
+        query_job = client.query(QUERY)
+        logging.info("Query executed in BigQuery successfully for action: %s", args.action)
+    except Exception as e:
+        logging.error(f"Error occurred while executing query: {e}")
+
+    # Ejecutar la acción en Redshift
+    QUERY = read_query(f"Scripts_sql/{args.action}_RedShift.sql")
+
+    with open(".aws/redshift.json", mode="r", encoding="utf-8") as cf:
+        params = json.load(cf)
+
+    workgroup_json = params["REDSHIFT_CONNECTION"]["workgroup"]
+    database_json = params["REDSHIFT_CONNECTION"]["database"]
+    secret_json = params["REDSHIFT_CONNECTION"]["secret"]
+
+
+    try:
+        client = boto3.client("redshift-data")
+    except Exception as e:
+        logging.error(f"Error occurred while creating Redshift client: {e}")
+
+    try:
+        statement = client.execute_statement(
+            WorkgroupName=workgroup_json,
+            Database=database_json,
+            SecretArn=secret_json,
+            Sql=QUERY,
+        )
+        logging.info("Query executed in Redshift successfully for action: %s", args.action)
+    except Exception as e:
+        logging.error(f"Error occurred while executing query in Redshift: {e}")
+
+    logging.info("Script finished successfully.")
 
 

@@ -6,6 +6,7 @@ from datetime import datetime
 from google.cloud import storage
 import boto3
 from botocore.exceptions import ClientError
+from google.cloud import bigquery
 
 
 def configurar_logger(base_path, fecha):
@@ -48,12 +49,6 @@ def search_files_in_folder(bucket_folder, source_folder):
         exit(0)
 
     return folder, archivos_csv
-
-
-def read_query(file):
-    with open(file, mode="r", encoding="utf-8") as cf:
-        QUERY = cf.read()
-    return QUERY
 
 
 def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding="utf-8"
@@ -160,5 +155,8 @@ def delete_file_s3(bucket_name, source_file_name):
         logging.info(f"File {object_summary.key} will be deleted") if object_summary.key.lower().startswith(source_file_name.lower()) else None
         object_summary.delete() if object_summary.key.lower().startswith(source_file_name.lower()) else None
 
-
+def read_query(file):
+    with open(file, mode="r", encoding="utf-8") as cf:
+        QUERY = cf.read()
+    return QUERY
 

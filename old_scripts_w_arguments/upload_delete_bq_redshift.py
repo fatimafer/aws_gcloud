@@ -39,7 +39,7 @@ except Exception as e:
 # Ejecutar la acción en Redshift
 QUERY = read_query(f"Scripts_sql/{args.action}_RedShift.sql")
 
-with open(".aws/redshift.json", mode="r", encoding="utf-8") as cf:
+with open("../.aws/redshift.json", mode="r", encoding="utf-8") as cf:
     params = json.load(cf)
 
 workgroup_json = params["REDSHIFT_CONNECTION"]["workgroup"]
