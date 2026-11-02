@@ -17,7 +17,6 @@ import os
 import argparse
 import logging
 from datetime import datetime
-import boto3
 
 from utilities import (open_json_file,
                        procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder
@@ -70,18 +69,17 @@ if __name__ == "__main__":
                     process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto) if target == "GCS" else None
 
 
-    carpeta = 'Scripts_sql'
-    log_file = configurar_logger(carpeta, fecha)
+    qy_folder = 'Scripts_sql'
+    log_file = configurar_logger(qy_folder, fecha)
     logging.info("Conversion log will be saved in: %s", log_file)
 
     #Ejecutar la acción en BigQuery
-
-    QUERY = read_query(args.action, "bigquery")
+    QUERY = read_query(args.action, "bigquery", qy_folder)
     execute_bq(QUERY, args.action)
 
 
     # Ejecutar la acción en Redshift
-    QUERY = read_query(args.action, "RedShift")
+    QUERY = read_query(args.action, "RedShift", qy_folder)
     params = open_json_file(parameters=".aws/redshift.json")
 
     execute_redshift(params["REDSHIFT_CONNECTION"]["workgroup"], params["REDSHIFT_CONNECTION"]["database"]

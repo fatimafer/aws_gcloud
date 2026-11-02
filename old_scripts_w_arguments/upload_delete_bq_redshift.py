@@ -22,8 +22,10 @@ parser = argparse.ArgumentParser(description="Borrar/Crear BIGQUERY/REDSHIFT")
 parser.add_argument("--action", default="delete", help="create para crear y delete para borrar")
 args = parser.parse_args()
 
+qy_folder = 'Scripts_sql'
+
 #Ejecutar la acción en BigQuery
-QUERY = read_query(args.action, "bigquery")
+QUERY = read_query(args.action, "bigquery", qy_folder)
 
 try:
     client = bigquery.Client()
@@ -37,7 +39,7 @@ except Exception as e:
     print(f"Error occurred while executing query: {e}")
 
 # Ejecutar la acción en Redshift
-QUERY = read_query(args.action, "RedShift")
+QUERY = read_query(args.action, "RedShift", qy_folder)
 
 with open("../.aws/redshift.json", mode="r", encoding="utf-8") as cf:
     params = json.load(cf)

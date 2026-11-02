@@ -171,8 +171,9 @@ def delete_file_s3(bucket_name, source_file_name):
         logging.error("Failed to delete files in s3: %s", str(e))
 
 
-def read_query(action, data_warehouse):
-    with open(f"Scripts_sql/{action}_{data_warehouse}.sql", mode="r", encoding="utf-8") as qy:
+
+def read_query(action, data_warehouse, folder):
+    with open(f"{folder}/{action}_{data_warehouse}.sql", mode="r", encoding="utf-8") as qy:
         QUERY = qy.read()
         qy.close()
     return QUERY
