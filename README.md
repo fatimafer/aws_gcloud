@@ -2,11 +2,11 @@ Este repositorio contiene unos archivos de credenciales que muestran ejemplos de
 **En ningún caso, se trata de credenciales reales**
 
 
-EJEMPLOS PARÁMETROS DE EJECUCION:
-* PARQUET A S3: conversion_dat_parquet --delimiter "," --encoding "utf-8" --bucket "coral-cloud-demo-reservations" --folder "Suite"
-* PARQUET GOOGLE CLOUD STORAGE: conversion_dat_parquet --delimiter "," --encoding "utf-8" --bucket "coral-cloud-demo" --folder "Deluxe"
-* CSV A S3: conversion_dat_csv --delimiter "," --encoding "utf-8" --bucket "coral-cloud-demo-reservations" --folder "Standard"
-* CSV A GOOGLE CLOUD STORAGE: conversion_dat_csv --delimiter "," --encoding "utf-8" --bucket "coral-cloud-demo" --folder "Guests"
-* SUBIR A BIGQUERY Y REDSHIFT: --action create
-* BORRAR CSV Y REDSHIFT: NO ES NECESARIO NINGÚN PARÁMETRO
 
+1. Abrimos desde la terminal donde descarguemos este repositorio
+
+2. Para subir ejecutar:
+   set "AWS_CONFIG_FILE=.aws\config" && set "AWS_SHARED_CREDENTIALS_FILE=.aws\credentials" && set "AWS_PROFILE=default" && set "GCLOUD_PROJECT=[aquí introducimos el id de proyecto]" && set "GOOGLE_APPLICATION_CREDENTIALS=.gcloud\adc.json" && python upload_delete_all.py --action create 
+
+3. Para borrar ejecutar:
+   set "AWS_CONFIG_FILE=.aws\config" && set "AWS_SHARED_CREDENTIALS_FILE=.aws\credentials" && set "AWS_PROFILE=default" && set "GCLOUD_PROJECT=[aquí introducimos el id de proyecto]" && set "GOOGLE_APPLICATION_CREDENTIALS=.gcloud\adc.json" && python upload_delete_all.py
