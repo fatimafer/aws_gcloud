@@ -7,8 +7,7 @@ import json
 from datetime import datetime
 from google.cloud import storage
 import boto3
-from botocore.exceptions import ClientError
-from google.cloud import bigquery
+
 
 def get_json_parameters(parameters):
     with open(parameters, mode="r", encoding="utf-8") as cf:
@@ -121,46 +120,55 @@ def process_gcloud_storage(bucket_name, source_file_name,  action=None, destinat
     bucket = storage_client.bucket(bucket_name)
 
     if action == "create":
-        blob = bucket.blob(destination_blob_name)
         try:
+            blob = bucket.blob(destination_blob_name)
             blob.upload_from_filename(source_file_name)
+            logging.info("Files uploaded to Google Cloud Storage: %s/%s", bucket_name, source_file_name)
         except Exception as e:
-            logging.error(e)
-            return False
-        return True
+            logging.error("Failed to upload files to Google Cloud Storage: %s", str(e))
 
     else:
-        blobs = storage_client.list_blobs(bucket.name)
-        for blob in blobs:
-            blob = bucket.blob(blob.name)
-            logging.info(f"File {blob.name} will be deleted.") if blob.name.lower().startswith(source_file_name.lower()) else None
-            blob.delete() if blob.name.lower().startswith(source_file_name.lower()) else None
+        try:
+            blobs = storage_client.list_blobs(bucket.name)
+            for blob in blobs:
+                blob = bucket.blob(blob.name)
+                if blob.name.lower().startswith(source_file_name.lower()):
+                    logging.info(f"File {blob.name} will be deleted.")
+                    blob.delete()
+                    logging.info("Files successfully deleted in Google Cloud Storage: %s", bucket)
+        except Exception as e:
+            logging.error("Failed to delete files in Cloud Storage: %s", str(e))
 
 
 def upload_file_s3(file_name, bucket, object_name=None):
     # If S3 object_name was not specified, use file_name
-    if object_name is None:
-        object_name = os.path.basename(file_name)
-    # Upload the file
-    s3_client = boto3.client('s3')
     try:
+        if object_name is None:
+            object_name = os.path.basename(file_name)
+        # Upload the file
+        s3_client = boto3.client('s3')
         s3_client.upload_file(file_name, bucket, object_name)
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
+        logging.info("Files uploaded to s3: %s/%s", bucket, object_name)
+    except Exception as e:
+        logging.error("Failed to upload files to s3: %s", str(e))
 
 
 def delete_file_s3(bucket_name, source_file_name):
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(bucket_name)
+    try:
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(bucket_name)
 
-    for object_summary in bucket.objects.all():
-        # Los "directorios" en S3 son objetos vacíos cuya clave termina en "/"
-        if object_summary.key.endswith('/'):
-            continue
-        logging.info(f"File {object_summary.key} will be deleted") if object_summary.key.lower().startswith(source_file_name.lower()) else None
-        object_summary.delete() if object_summary.key.lower().startswith(source_file_name.lower()) else None
+        for object_summary in bucket.objects.all():
+            # Los "directorios" en S3 son objetos vacíos cuya clave termina en "/"
+            if object_summary.key.endswith('/'):
+                continue
+            if object_summary.key.lower().startswith(source_file_name.lower()):
+                logging.info(f"File {object_summary.key} will be deleted")
+                object_summary.delete()
+                logging.info("Files successfully deleted in s3: %s", bucket)
+    except Exception as e:
+        logging.error("Failed to delete files in s3: %s", str(e))
+
 
 def read_query(file):
     with open(file, mode="r", encoding="utf-8") as cf:

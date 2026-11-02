@@ -39,8 +39,4 @@ if __name__ == "__main__":
 
         action = None
 
-        try:
-            if process_gcloud_storage(args.bucket, ruta_salida, action, nombre_objeto):
-                logging.info("Archivo subido a Google Cloud Storage: %s/%s", args.bucket, nombre_objeto)
-        except Exception as e:
-            logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))
+        process_gcloud_storage(args.bucket, ruta_salida, action, nombre_objeto)

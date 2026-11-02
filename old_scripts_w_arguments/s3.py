@@ -31,8 +31,4 @@ if __name__ == "__main__":
 
         nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
-        try:
-            upload_file_s3(ruta_salida, args.bucket, nombre_objeto)
-            logging.info("Archivo subido a S3: %s/%s", args.bucket, nombre_objeto)
-        except Exception as e:
-            logging.error("Error al subir el archivo a S3: %s", str(e))
+        upload_file_s3(ruta_salida, args.bucket, nombre_objeto)

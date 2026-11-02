@@ -54,21 +54,10 @@ if __name__ == "__main__":
             logging.info("Conversion log will be saved in: %s", log_file)
 
             if args.action != "create":
-                if target == "s3":
-                    try:
-                        delete_file_s3(bucket, bucket_folder)
-                        logging.info("Files successfully deleted in s3: %s", bucket)
-                    except Exception  as e:
-                        logging.error("Failed to delete files in s3: %s", str(e))
+                delete_file_s3(bucket, bucket_folder) if target == "s3" else None
+                process_gcloud_storage(bucket, bucket_folder, args.action) if target == "GCS" else None
 
-                if target == "GCS":
-                    try:
-                        process_gcloud_storage(bucket, bucket_folder, args.action)
-                        logging.info("Files successfully deleted in Google Cloud Storage: %s", bucket)
-                    except Exception  as e:
-                        logging.error("Failed to delete files in Cloud Storage: %s", str(e))
-
-            elif args.action == "create":
+            else:
                 folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
 
                 for archivo_csv in archivos_csv:
@@ -78,19 +67,8 @@ if __name__ == "__main__":
 
                     nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
-                    if target == "s3":
-                        try:
-                            upload_file_s3(ruta_salida, bucket, nombre_objeto)
-                            logging.info("Files uploaded to s3: %s/%s", bucket, nombre_objeto)
-                        except Exception as e:
-                            logging.error("Failed to upload files to s3: %s", str(e))
-
-                    if target == "GCS":
-                        try:
-                            if process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto):
-                                logging.info("Files uploaded to Google Cloud Storage: %s/%s", bucket, nombre_objeto)
-                        except Exception as e:
-                            logging.error("Failed to upload files to Google Cloud Storage: %s", str(e))
+                    upload_file_s3(ruta_salida, bucket, nombre_objeto) if target == "s3" else None
+                    process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto) if target == "GCS" else None
 
 
     #Ejecutar la acción en BigQuery
