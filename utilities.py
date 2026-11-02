@@ -6,13 +6,14 @@ import json
 
 from datetime import datetime
 from google.cloud import storage
+from google.cloud import bigquery
 import boto3
 
 
-def get_json_parameters(parameters):
-    with open(parameters, mode="r", encoding="utf-8") as cf:
-        params = json.load(cf)
-    cf.close()
+def open_json_file(parameters):
+    with open(parameters, mode="r", encoding="utf-8") as js:
+        params = json.load(js)
+    js.close()
     return params
 
 def configurar_logger(base_path, fecha):
@@ -170,8 +171,39 @@ def delete_file_s3(bucket_name, source_file_name):
         logging.error("Failed to delete files in s3: %s", str(e))
 
 
-def read_query(file):
-    with open(file, mode="r", encoding="utf-8") as cf:
-        QUERY = cf.read()
+def read_query(action, data_warehouse):
+    with open(f"Scripts_sql/{action}_{data_warehouse}.sql", mode="r", encoding="utf-8") as qy:
+        QUERY = qy.read()
+        qy.close()
     return QUERY
 
+
+def execute_bq(QUERY, action):
+    try:
+        client = bigquery.Client()
+    except Exception as e:
+        logging.error(f"Error occurred while creating BigQuery client: {e}")
+
+    try:
+        query_job = client.query(QUERY)
+        logging.info("Query executed in BigQuery successfully for action: %s", action)
+    except Exception as e:
+        logging.error(f"Error occurred while executing query: {e}")
+
+
+def execute_redshift(workgroup, database, secret, QUERY, action):
+    try:
+        client = boto3.client("redshift-data")
+    except Exception as e:
+        logging.error(f"Error occurred while creating Redshift client: {e}")
+
+    try:
+        statement = client.execute_statement(
+            WorkgroupName=workgroup,
+            Database=database,
+            SecretArn=secret,
+            Sql=QUERY,
+        )
+        logging.info("Query executed in Redshift successfully for action: %s", action)
+    except Exception as e:
+        logging.error(f"Error occurred while executing query in Redshift: {e}")

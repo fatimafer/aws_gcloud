@@ -23,7 +23,7 @@ parser.add_argument("--action", default="delete", help="create para crear y dele
 args = parser.parse_args()
 
 #Ejecutar la acción en BigQuery
-QUERY = read_query(f"Scripts_sql/{args.action}_bigquery.sql")
+QUERY = read_query(args.action, "bigquery")
 
 try:
     client = bigquery.Client()
@@ -37,7 +37,7 @@ except Exception as e:
     print(f"Error occurred while executing query: {e}")
 
 # Ejecutar la acción en Redshift
-QUERY = read_query(f"Scripts_sql/{args.action}_RedShift.sql")
+QUERY = read_query(args.action, "RedShift")
 
 with open("../.aws/redshift.json", mode="r", encoding="utf-8") as cf:
     params = json.load(cf)

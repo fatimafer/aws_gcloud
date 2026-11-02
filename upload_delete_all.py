@@ -17,12 +17,11 @@ import os
 import argparse
 import logging
 from datetime import datetime
-from google.cloud import bigquery
 import boto3
 
-from utilities import (get_json_parameters,
+from utilities import (open_json_file,
                        procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder
-                        , configurar_logger, delete_file_s3, read_query)
+                        , configurar_logger, delete_file_s3, read_query, execute_bq,execute_redshift)
 
 if __name__ == "__main__":
 
@@ -36,7 +35,7 @@ if __name__ == "__main__":
     encoding = "utf-8"
     delimiter = ","
 
-    params = get_json_parameters(parameters= "parameters.json")
+    params = open_json_file(parameters="parameters.json")
 
     targets = params["TARGETS"]
 
@@ -71,45 +70,22 @@ if __name__ == "__main__":
                     process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto) if target == "GCS" else None
 
 
-    #Ejecutar la acción en BigQuery
-    QUERY = read_query(f"Scripts_sql/{args.action}_bigquery.sql")
-
     carpeta = 'Scripts_sql'
     log_file = configurar_logger(carpeta, fecha)
     logging.info("Conversion log will be saved in: %s", log_file)
 
-    try:
-        client = bigquery.Client()
-    except Exception as e:
-        logging.error(f"Error occurred while creating BigQuery client: {e}")
+    #Ejecutar la acción en BigQuery
 
-    try:
-        query_job = client.query(QUERY)
-        logging.info("Query executed in BigQuery successfully for action: %s", args.action)
-    except Exception as e:
-        logging.error(f"Error occurred while executing query: {e}")
+    QUERY = read_query(args.action, "bigquery")
+    execute_bq(QUERY, args.action)
+
 
     # Ejecutar la acción en Redshift
-    QUERY = read_query(f"Scripts_sql/{args.action}_RedShift.sql")
+    QUERY = read_query(args.action, "RedShift")
+    params = open_json_file(parameters=".aws/redshift.json")
 
-    params = get_json_parameters(parameters=".aws/redshift.json")
-
-    try:
-        client = boto3.client("redshift-data")
-    except Exception as e:
-        logging.error(f"Error occurred while creating Redshift client: {e}")
-
-
-    try:
-        statement = client.execute_statement(
-            WorkgroupName=params["REDSHIFT_CONNECTION"]["workgroup"],
-            Database=params["REDSHIFT_CONNECTION"]["database"],
-            SecretArn=params["REDSHIFT_CONNECTION"]["secret"],
-            Sql=QUERY,
-        )
-        logging.info("Query executed in Redshift successfully for action: %s", args.action)
-    except Exception as e:
-        logging.error(f"Error occurred while executing query in Redshift: {e}")
+    execute_redshift(params["REDSHIFT_CONNECTION"]["workgroup"], params["REDSHIFT_CONNECTION"]["database"]
+                     , params["REDSHIFT_CONNECTION"]["secret"], QUERY, args.action)
 
     logging.info("Script finished successfully.")
 
