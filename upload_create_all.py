@@ -1,3 +1,18 @@
+# Guardar requisitos
+# pip freeze > requirements.txt
+# pip list --format=freeze > requirements.txt
+
+# Instalar requisitos
+# pip install -r requirements.txt
+
+#Ejecutar con
+# set GCLOUD_PROJECT=coral-cloud
+# set GOOGLE_APPLICATION_CREDENTIALS=.gcloud/adc.json
+# set AWS_PROFILE=mi-perfil o export AWS_PROFILE=mi-perfil
+# set AWS_CONFIG_FILE=.aws\config
+# set AWS_SHARED_CREDENTIALS_FILE=.aws\credentials
+
+
 import os
 import argparse
 import logging
@@ -30,16 +45,19 @@ if __name__ == "__main__":
         bucket = targets[target]["bucket"]
         formats = targets[target]["output_formats"]
 
-        if args.action == "create":
+        for format in formats.keys():
+            carpeta = formats[format]["carpeta"]
+            bucket_folder = formats[format]["folder"]
+            is_parquet = carpeta.endswith("parquet")
 
-            for format in formats.keys():
-                carpeta = formats[format]["carpeta"]
-                bucket_folder = formats[format]["folder"]
-                is_parquet = carpeta.endswith("parquet")
+            log_file = configurar_logger(carpeta, fecha)
+            logging.info("Log de conversión será guardado en: %s", log_file)
 
-                log_file = configurar_logger(carpeta, fecha)
-                logging.info("Log de conversión será guardado en: %s", log_file)
+            if args.action != "create":
+                if target == "GCS":
+                    process_gcloud_storage(bucket, args.action)
 
+            else:
                 folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
 
                 for archivo_csv in archivos_csv:
@@ -62,11 +80,6 @@ if __name__ == "__main__":
                                 logging.info("Archivo subido a Google Cloud Storage: %s/%s", bucket, nombre_objeto)
                         except Exception as e:
                             logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))
-
-        elif args.action != "create" and target == "GCS":
-            log_file = configurar_logger(formats["CSV"]["carpeta"], fecha)
-            logging.info("Log de conversión será guardado en: %s", log_file)
-            process_gcloud_storage(bucket, args.action)
 
 
 
