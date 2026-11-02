@@ -2,12 +2,19 @@ import os
 import shutil
 import pandas as pd
 import logging
+import json
+
 from datetime import datetime
 from google.cloud import storage
 import boto3
 from botocore.exceptions import ClientError
 from google.cloud import bigquery
 
+def get_json_parameters(parameters):
+    with open(parameters, mode="r", encoding="utf-8") as cf:
+        params = json.load(cf)
+    cf.close()
+    return params
 
 def configurar_logger(base_path, fecha):
     log_dir = os.path.join(base_path, "log", fecha)

@@ -16,12 +16,13 @@
 import os
 import argparse
 import logging
-import json
 from datetime import datetime
 from google.cloud import bigquery
 import boto3
 
-from utilities import procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder, configurar_logger, delete_file_s3, read_query
+from utilities import (get_json_parameters,
+                       procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder
+                        , configurar_logger, delete_file_s3, read_query)
 
 if __name__ == "__main__":
 
@@ -35,12 +36,9 @@ if __name__ == "__main__":
     encoding = "utf-8"
     delimiter = ","
 
-    with open("parameters.json", mode="r", encoding="utf-8") as cf:
-        params = json.load(cf)
-        targets = params["TARGETS"]
-        del params
-    cf.close()
+    params = get_json_parameters(parameters= "parameters.json")
 
+    targets = params["TARGETS"]
 
     for target in targets.keys():
 
@@ -53,22 +51,22 @@ if __name__ == "__main__":
             is_parquet = carpeta.endswith("parquet")
 
             log_file = configurar_logger(carpeta, fecha)
-            logging.info("Log de conversión será guardado en: %s", log_file)
+            logging.info("Conversion log will be saved in: %s", log_file)
 
             if args.action != "create":
                 if target == "s3":
                     try:
                         delete_file_s3(bucket, bucket_folder)
-                        logging.info("Archivos borrados en s3: %s", bucket)
+                        logging.info("Files successfully deleted in s3: %s", bucket)
                     except Exception  as e:
-                        logging.error("Error al borrar en s3: %s", str(e))
+                        logging.error("Failed to delete files in s3: %s", str(e))
 
                 if target == "GCS":
                     try:
                         process_gcloud_storage(bucket, bucket_folder, args.action)
-                        logging.info("Archivos borrados en Google Cloud Storage: %s", bucket)
+                        logging.info("Files successfully deleted in Google Cloud Storage: %s", bucket)
                     except Exception  as e:
-                        logging.error("Error al borrar en Cloud Storage: %s", str(e))
+                        logging.error("Failed to delete files in Cloud Storage: %s", str(e))
 
             elif args.action == "create":
                 folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
@@ -76,23 +74,23 @@ if __name__ == "__main__":
                 for archivo_csv in archivos_csv:
                     parquet_dir, ruta_salida = procesar_archivos_en_carpeta(carpeta, archivo_csv, delimiter, encoding
                                                                             , bucket_folder, is_parquet, move_processed=False)
-                    logging.info("Archivo .parquet guardado en: %s", parquet_dir)
+                    logging.info("Files saved in: %s", parquet_dir)
 
                     nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
                     if target == "s3":
                         try:
                             upload_file_s3(ruta_salida, bucket, nombre_objeto)
-                            logging.info("Archivo subido a s3: %s/%s", bucket, nombre_objeto)
+                            logging.info("Files uploaded to s3: %s/%s", bucket, nombre_objeto)
                         except Exception as e:
-                            logging.error("Error al subir el archivo a s3: %s", str(e))
+                            logging.error("Failed to upload files to s3: %s", str(e))
 
                     if target == "GCS":
                         try:
                             if process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto):
-                                logging.info("Archivo subido a Google Cloud Storage: %s/%s", bucket, nombre_objeto)
+                                logging.info("Files uploaded to Google Cloud Storage: %s/%s", bucket, nombre_objeto)
                         except Exception as e:
-                            logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))
+                            logging.error("Failed to upload files to Google Cloud Storage: %s", str(e))
 
 
     #Ejecutar la acción en BigQuery
@@ -100,7 +98,7 @@ if __name__ == "__main__":
 
     carpeta = 'Scripts_sql'
     log_file = configurar_logger(carpeta, fecha)
-    logging.info("Log de conversión será guardado en: %s", log_file)
+    logging.info("Conversion log will be saved in: %s", log_file)
 
     try:
         client = bigquery.Client()
@@ -116,24 +114,19 @@ if __name__ == "__main__":
     # Ejecutar la acción en Redshift
     QUERY = read_query(f"Scripts_sql/{args.action}_RedShift.sql")
 
-    with open(".aws/redshift.json", mode="r", encoding="utf-8") as cf:
-        params = json.load(cf)
-
-    workgroup_json = params["REDSHIFT_CONNECTION"]["workgroup"]
-    database_json = params["REDSHIFT_CONNECTION"]["database"]
-    secret_json = params["REDSHIFT_CONNECTION"]["secret"]
-
+    params = get_json_parameters(parameters=".aws/redshift.json")
 
     try:
         client = boto3.client("redshift-data")
     except Exception as e:
         logging.error(f"Error occurred while creating Redshift client: {e}")
 
+
     try:
         statement = client.execute_statement(
-            WorkgroupName=workgroup_json,
-            Database=database_json,
-            SecretArn=secret_json,
+            WorkgroupName=params["REDSHIFT_CONNECTION"]["workgroup"],
+            Database=params["REDSHIFT_CONNECTION"]["database"],
+            SecretArn=params["REDSHIFT_CONNECTION"]["secret"],
             Sql=QUERY,
         )
         logging.info("Query executed in Redshift successfully for action: %s", args.action)
