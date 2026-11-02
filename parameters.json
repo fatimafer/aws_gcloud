@@ -4,12 +4,12 @@
                     "bucket": "coral-cloud-demo-reservations" ,
                     "output_formats": {
                                         "CSV": {
-                                                  "carpeta": "conversion_dat_csv",
-                                                  "folder": "Standard"
+                                                  "origin_dir": "conversion_dat_csv",
+                                                  "record_type": "Standard"
                                         },
                                         "PARQUET": {
-                                                  "carpeta": "conversion_dat_parquet",
-                                                  "folder": "Suite"
+                                                  "origin_dir": "conversion_dat_parquet",
+                                                  "record_type": "Suite"
                                         }
                     }
                 },
@@ -17,12 +17,12 @@
                               "bucket": "coral-cloud-demo" ,
                               "output_formats": {
                                                   "CSV": {
-                                                            "carpeta": "conversion_dat_csv",
-                                                            "folder": "Guests"
+                                                            "origin_dir": "conversion_dat_csv",
+                                                            "record_type": "Guests"
                                                           },
                                                   "PARQUET": {
-                                                            "carpeta": "conversion_dat_parquet",
-                                                            "folder": "Deluxe"
+                                                            "origin_dir": "conversion_dat_parquet",
+                                                            "record_type": "Deluxe"
                                                   }
                               }
             }

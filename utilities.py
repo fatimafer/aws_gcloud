@@ -10,30 +10,32 @@ from google.cloud import bigquery
 import boto3
 
 
+# Cargar parámetros desde un archivo JSON
 def open_json_file(parameters):
     with open(parameters, mode="r", encoding="utf-8") as js:
         params = json.load(js)
     js.close()
     return params
 
-def configurar_logger(base_path, fecha):
-    log_dir = os.path.join(base_path, "log", fecha)
+# Configurar el logger para registrar eventos en un archivo de log y en la consola
+def configure_logger(base_path, date):
+    log_dir = os.path.join(base_path, "log", date)
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, f"log_{fecha}.log")
+    log_path = os.path.join(log_dir, f"log_{date}.log")
 
-    # Crear logger
+    # Configurar el logger para registrar eventos en un archivo de log y en la consola
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     logging.getLogger('botocore.credentials').setLevel(logging.WARNING)
 
-    # Evitar duplicados si se llama varias veces
+    # Evitar agregar múltiples handlers si el logger ya tiene handlers configurados
     if not logger.handlers:
-        # Handler para archivo
+        # Handler para registrar eventos en un archivo de log
         file_handler = logging.FileHandler(log_path)
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logger.addHandler(file_handler)
 
-        # Handler para consola
+        # Handler para registrar eventos en la consola
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
         logger.addHandler(stream_handler)
@@ -41,13 +43,16 @@ def configurar_logger(base_path, fecha):
     return log_path
 
 
-def mover_archivo(origen, destino):
-    os.makedirs(os.path.dirname(destino), exist_ok=True)
-    shutil.move(origen, destino)
+def move_file(source, target):
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    shutil.move(source, target)
 
 def search_files_in_folder(bucket_folder, source_folder):
+
+    # Generar la ruta de la carpeta en el bucket de destino
     folder = bucket_folder + "_hotelbookings/"
 
+    # Buscar archivos .csv en la carpeta de origen que coincidan con el tipo de registro correspondiente
     sufijo = "guests.csv" if bucket_folder == "Guests" else "reservations.csv"
     archivos_csv = [f for f in os.listdir(source_folder) if f.lower().endswith(sufijo)]
 
@@ -58,40 +63,53 @@ def search_files_in_folder(bucket_folder, source_folder):
     return folder, archivos_csv
 
 
-def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding="utf-8"
-                                 , cloud_folder="default", parquet_format=False, move_processed=True):
+def process_files_in_folder(input_folder, file, delimiter=",", encoding="utf-8"
+                            , record_type="default", parquet_format=False, date=None, move_processed=True, ):
 
-    ruta_entrada = os.path.join(input_folder, archivo)
-    fecha = datetime.now().strftime("%Y%m%d")
+    # Determinar la ruta de origen de los archivos
+    source_dir = os.path.join(input_folder, file)
 
-    formato = "parquet" if parquet_format else "csv"
+    # Establecer la fecha actual si no se proporciona una fecha específica
+    if date is None:
+        date = datetime.now().strftime("%Y%m%d")
 
-    local_output_dir = os.path.join(input_folder, formato, fecha)
-    procesados_dir = os.path.join(input_folder, "procesados", fecha)
-    fallos_dir = os.path.join(input_folder, "fallos", fecha)
+    # Determinar el formato de salida
+    output_format = "parquet" if parquet_format else "csv"
 
+    # Definir las rutas de salida para los archivos procesados, fallidos y convertidos
+    local_output_dir = os.path.join(input_folder, output_format, date)
+    processed_dir = os.path.join(input_folder, "procesados", date)
+    errors_dir = os.path.join(input_folder, "fallos", date)
+
+    # Crear las carpetas de salida si no existen
     os.makedirs(local_output_dir, exist_ok=True)
-    os.makedirs(procesados_dir, exist_ok=True)
-    os.makedirs(fallos_dir, exist_ok=True)
+    os.makedirs(processed_dir, exist_ok=True)
+    os.makedirs(errors_dir, exist_ok=True)
 
-    nombre_base = os.path.splitext(archivo)[0]
-    ruta_salida = os.path.join(local_output_dir, f"{nombre_base}.{formato}")
+    #Eliminamos la extensión de origen del archivo para quedarnos solo con el nombre
+    base_name = os.path.splitext(file)[0]
 
+    #Generar el nombre del archivo de salida con la extensión correspondiente al formato de salida
+    output_file_name = os.path.join(local_output_dir, f"{base_name}.{output_format}")
+
+    # Creamos un DataFrame a partir del archivo de origen
     try:
         df = pd.read_csv(
-            ruta_entrada,
+            source_dir,
             delimiter=delimiter,
             encoding=encoding,
             dtype=str,
             engine="python"
         )
 
-        if cloud_folder != "Guests":
-            df = df[df['Room Type'] == cloud_folder]
+        # Filtramos el DataFrame para eliminar tipos de registros que no proceden
+        if record_type != "Guests":
+            df = df[df['Room Type'] == record_type]
 
+        # Convertimos el DataFrame a Parquet o CSV según el formato de salida especificado
         if parquet_format==True:
             df.to_parquet(
-                ruta_salida,
+                output_file_name,
                 engine="pyarrow",
                 compression="snappy",
                 index=False
@@ -99,29 +117,34 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
 
         else:
             df.to_csv(
-                ruta_salida,
+                output_file_name,
                 sep=delimiter,
                 encoding=encoding,
                 index=False
             )
 
 
-        logging.info(f"CONVERTIDO: {archivo} -> {ruta_salida}")
-        mover_archivo(ruta_entrada, os.path.join(procesados_dir, archivo)) if move_processed == True else None
+        logging.info(f"CONVERTIDO: {file} -> {output_file_name}")
+
+        # Movemos el archivo procesado a la carpeta de procesados si se especifica move_processed=True
+        move_file(source_dir, os.path.join(processed_dir, file)) if move_processed == True else None
 
     except Exception as e:
-        logging.error(f"ERROR en {archivo}: {str(e)}")
-        mover_archivo(ruta_entrada, os.path.join(fallos_dir, archivo)) if move_processed == True else None
+        logging.error(f"ERROR en {file}: {str(e)}")
 
-    return local_output_dir, ruta_salida
+        # Movemos el archivo procesado a la carpeta de procesados si se especifica move_processed=True
+        move_file(source_dir, os.path.join(errors_dir, file)) if move_processed == True else None
+
+    return local_output_dir, output_file_name
 
 
 def upload_file_s3(file_name, bucket, object_name=None):
-    # If S3 object_name was not specified, use file_name
+    # Si no se proporciona un nombre de objeto, se utiliza el nombre del archivo como nombre de objeto
     try:
         if object_name is None:
             object_name = os.path.basename(file_name)
-        # Upload the file
+
+        # Subimos el archivo al bucket de S3 utilizando el cliente de boto3
         s3_client = boto3.client('s3')
         logging.info("S3 client created successfully for bucket: %s", bucket)
     except Exception  as e:
@@ -136,14 +159,22 @@ def upload_file_s3(file_name, bucket, object_name=None):
 
 
 def delete_file_s3(bucket_name, source_file_name):
+
+    # Inicializamos el recurso de S3 utilizando boto3
     try:
         s3 = boto3.resource('s3')
         bucket = s3.Bucket(bucket_name)
+        logging.info("S3 resource created successfully for bucket: %s", bucket_name)
+    except Exception  as e:
+        logging.error("Failed to create S3 resource: %s", str(e))
+        return
 
+    try:
         for object_summary in bucket.objects.all():
-            # Se omiten los objetos que son directorios
+            # Listamos los objetos en el bucket que no sean "directorios" (objetos vacíos cuya clave termina en "/")
             if object_summary.key.endswith('/'):
                 continue
+            # Verificamos si el nombre del objeto en S3 coincide con el nombre del archivo que queremos eliminar
             if object_summary.key.lower().startswith(source_file_name.lower()):
                 logging.info(f"File {object_summary.key} will be deleted")
                 object_summary.delete()
@@ -154,6 +185,7 @@ def delete_file_s3(bucket_name, source_file_name):
 
 class GCS(object):
 
+    # Inicializamos la clase GCS con el nombre del bucket de Google Cloud Storage
     def __init__(self, bucket):
         self.bucket = bucket
 
@@ -168,6 +200,8 @@ class GCS(object):
     def upload_file(self, destination_blob_name, source_file_name):
         try:
             blob = self.bucket.blob(destination_blob_name)
+
+            # Subimos el archivo al bucket de Google Cloud Storage utilizando el cliente de storage
             blob.upload_from_filename(source_file_name)
             logging.info("Files uploaded to Google Cloud Storage: %s/%s", self.bucket.name, source_file_name)
         except Exception as e:
@@ -175,9 +209,15 @@ class GCS(object):
 
     def delete_file(self, bucket_folder):
         try:
+
+            # Obtenemos la lista de blobs (archivos) en el bucket de Google Cloud Storage
             blobs = self.storage_client.list_blobs(self.bucket.name)
+
+            # Iteramos sobre los archivos del bucket
             for blob in blobs:
                 blob = self.bucket.blob(blob.name)
+
+                # Verificamos si el nombre del blob coincide con el nombre del archivo que queremos eliminar
                 if blob.name.lower().startswith(bucket_folder.lower()):
                     logging.info(f"File {blob.name} will be deleted.")
                     blob.delete()
@@ -187,6 +227,7 @@ class GCS(object):
 
 
 def read_query(action, data_warehouse, folder):
+    # Leer la consulta SQL desde un archivo
     with open(f"{folder}/{action}_{data_warehouse}.sql", mode="r", encoding="utf-8") as qy:
         QUERY = qy.read()
         qy.close()
@@ -194,11 +235,13 @@ def read_query(action, data_warehouse, folder):
 
 
 def execute_bq(QUERY, action):
+    # Inicializamos el cliente de BigQuery
     try:
         client = bigquery.Client()
     except Exception as e:
         logging.error(f"Error occurred while creating BigQuery client: {e}")
 
+    # Ejecutamos la consulta SQL en BigQuery
     try:
         client.query(QUERY)
         logging.info("Query executed in BigQuery successfully for action: %s", action)
@@ -207,11 +250,14 @@ def execute_bq(QUERY, action):
 
 
 def execute_redshift(workgroup, database, secret, QUERY, action):
+
+    # Inicializamos el cliente de Redshift Data API utilizando boto3
     try:
         client = boto3.client("redshift-data")
     except Exception as e:
         logging.error(f"Error occurred while creating Redshift client: {e}")
 
+    # Ejecutamos la consulta SQL en Redshift utilizando el cliente de Redshift
     try:
         client.execute_statement(
             WorkgroupName=workgroup,

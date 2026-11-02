@@ -19,8 +19,8 @@ import logging
 from datetime import datetime
 
 from utilities import (open_json_file, GCS,
-                       procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder
-                        , configurar_logger, delete_file_s3, read_query, execute_bq,execute_redshift)
+                       process_files_in_folder, upload_file_s3, search_files_in_folder
+                        , configure_logger, delete_file_s3, read_query, execute_bq, execute_redshift)
 
 if __name__ == "__main__":
 
@@ -30,51 +30,67 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    fecha =datetime.now().strftime("%Y%m%d")
+
+    date =datetime.now().strftime("%Y%m%d")
+    
+    # Subimos o borramos archivos en las plataformas cloud
     encoding = "utf-8"
     delimiter = ","
 
     params = open_json_file(parameters="parameters.json")
 
+    # Definir las plataformas cloud de destino
     targets = params["TARGETS"]
 
     for target in targets.keys():
 
+        # Obtener el bucket y los formatos de salida para la plataforma actual
         bucket = targets[target]["bucket"]
         formats = targets[target]["output_formats"]
 
+        # Inicializar el cliente de Google Cloud Storage si el destino es GCS
         gcs = GCS(bucket) if target == "GCS" else None
 
         for format in formats.keys():
-            carpeta = formats[format]["carpeta"]
-            bucket_folder = formats[format]["folder"]
-            is_parquet = carpeta.endswith("parquet")
 
-            log_file = configurar_logger(carpeta, fecha)
+            # Obtener la carpeta de origen y la carpeta destino en el bucket para el formato actual
+            origin_dir = formats[format]["origin_dir"]
+            record_type = formats[format]["record_type"]
+
+            # Determinar si los archivos se convertirán a Parquet o CSV
+            is_parquet = origin_dir.endswith("parquet")
+
+            # Configurar el logger para la carpeta de origen y la fecha actual
+            log_file = configure_logger(origin_dir, date)
             logging.info("Conversion log will be saved in: %s", log_file)
 
             if args.action == "delete":
-                delete_file_s3(bucket, bucket_folder) if target == "s3" else None
-                # process_gcloud_storage(bucket, bucket_folder, args.action) if target == "GCS" else None
-                gcs.delete_file(bucket_folder) if target == "GCS" else None
+                delete_file_s3(bucket, record_type) if target == "s3" else None
+                gcs.delete_file(record_type) if target == "GCS" else None
 
             else:
-                folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
 
-                for archivo_csv in archivos_csv:
-                    parquet_dir, ruta_salida = procesar_archivos_en_carpeta(carpeta, archivo_csv, delimiter, encoding
-                                                                            , bucket_folder, is_parquet, move_processed=False)
-                    logging.info("Files saved in: %s", parquet_dir)
+                # Buscar archivos en la carpeta de origen
+                bucket_folder, raw_files = search_files_in_folder(record_type, origin_dir)
 
-                    nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
+                # Realizamos las transformaciones
+                for raw_file in raw_files:
+                    conversion_dir, converted_file = process_files_in_folder(origin_dir, raw_file, delimiter, encoding
+                                                                             , record_type, is_parquet, date, move_processed=False)
+                    logging.info("Files saved in: %s", conversion_dir)
 
-                    upload_file_s3(ruta_salida, bucket, nombre_objeto) if target == "s3" else None
-                    # process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto) if target == "GCS" else None
-                    gcs.upload_file(nombre_objeto, ruta_salida) if target == "GCS" else None
+                    object_name_in_bucket = os.path.join(bucket_folder, os.path.basename(converted_file))
+
+                    # Subir el archivo convertido a la plataforma cloud correspondiente
+                    upload_file_s3(converted_file, bucket, object_name_in_bucket) if target == "s3" else None
+                    gcs.upload_file(object_name_in_bucket, converted_file) if target == "GCS" else None
 
 
+    # Ejecutar scripts SQL en BigQuery y Redshift
+
+    # Configurar el logger para la carpeta de scripts SQL y la fecha actual
     qy_folder = 'Scripts_sql'
-    log_file = configurar_logger(qy_folder, fecha)
+    log_file = configure_logger(qy_folder, date)
     logging.info("Conversion log will be saved in: %s", log_file)
 
     #Ejecutar la acción en BigQuery

@@ -2,7 +2,7 @@ import os
 import argparse
 import logging
 from datetime import datetime
-from utilities import procesar_archivos_en_carpeta, upload_file_s3, search_files_in_folder, configurar_logger
+from utilities import process_files_in_folder, upload_file_s3, search_files_in_folder, configure_logger
 
 if __name__ == "__main__":
 
@@ -19,14 +19,14 @@ if __name__ == "__main__":
 
     is_parquet = args.carpeta.endswith("parquet")
 
-    log_file = configurar_logger(args.carpeta, args.fecha)
+    log_file = configure_logger(args.carpeta, args.fecha)
     logging.info("Log de conversión será guardado en: %s", log_file)
 
     folder, archivos_csv = search_files_in_folder(args.folder, args.carpeta)
 
     for archivo_csv in archivos_csv:
-        parquet_dir, ruta_salida = procesar_archivos_en_carpeta(args.carpeta, archivo_csv, args.delimiter, args.encoding
-                                                                , args.folder, is_parquet)
+        parquet_dir, ruta_salida = process_files_in_folder(args.carpeta, archivo_csv, args.delimiter, args.encoding
+                                                           , args.folder, is_parquet)
         logging.info("Archivo .parquet guardado en: %s", parquet_dir)
 
         nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
