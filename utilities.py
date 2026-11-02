@@ -116,37 +116,6 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
     return local_output_dir, ruta_salida
 
 
-def process_gcloud_storage(bucket_name, source_file_name,  action=None, destination_blob_name=None):
-
-    try:
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-        logging.info("Google Cloud Storage client created successfully for bucket: %s", bucket_name)
-    except Exception as e:
-        logging.error("Failed to create Google Cloud Storage client: %s", str(e))
-        return
-
-    if action == "create":
-        try:
-            blob = bucket.blob(destination_blob_name)
-            blob.upload_from_filename(source_file_name)
-            logging.info("Files uploaded to Google Cloud Storage: %s/%s", bucket_name, source_file_name)
-        except Exception as e:
-            logging.error("Failed to upload files to Google Cloud Storage: %s", str(e))
-
-    else:
-        try:
-            blobs = storage_client.list_blobs(bucket.name)
-            for blob in blobs:
-                blob = bucket.blob(blob.name)
-                if blob.name.lower().startswith(source_file_name.lower()):
-                    logging.info(f"File {blob.name} will be deleted.")
-                    blob.delete()
-                    logging.info("Files successfully deleted in Google Cloud Storage: %s", bucket)
-        except Exception as e:
-            logging.error("Failed to delete files in Cloud Storage: %s", str(e))
-
-
 def upload_file_s3(file_name, bucket, object_name=None):
     # If S3 object_name was not specified, use file_name
     try:
@@ -182,6 +151,39 @@ def delete_file_s3(bucket_name, source_file_name):
     except Exception as e:
         logging.error("Failed to delete files in s3: %s", str(e))
 
+
+class GCS(object):
+
+    def __init__(self, bucket):
+        self.bucket = bucket
+
+        try:
+            self.storage_client = storage.Client()
+            self.bucket = self.storage_client.bucket(self.bucket)
+            logging.info("Google Cloud Storage client created successfully for bucket: %s", bucket)
+        except Exception as e:
+            logging.error("Failed to create Google Cloud Storage client: %s", str(e))
+        return
+
+    def upload_file(self, destination_blob_name, source_file_name):
+        try:
+            blob = self.bucket.blob(destination_blob_name)
+            blob.upload_from_filename(source_file_name)
+            logging.info("Files uploaded to Google Cloud Storage: %s/%s", self.bucket.name, source_file_name)
+        except Exception as e:
+            logging.error("Failed to upload files to Google Cloud Storage: %s", str(e))
+
+    def delete_file(self, bucket_folder):
+        try:
+            blobs = self.storage_client.list_blobs(self.bucket.name)
+            for blob in blobs:
+                blob = self.bucket.blob(blob.name)
+                if blob.name.lower().startswith(bucket_folder.lower()):
+                    logging.info(f"File {blob.name} will be deleted.")
+                    blob.delete()
+                    logging.info("Files successfully deleted in Google Cloud Storage: %s", self.bucket.name)
+        except Exception as e:
+            logging.error("Failed to delete files in Cloud Storage: %s", str(e))
 
 
 def read_query(action, data_warehouse, folder):

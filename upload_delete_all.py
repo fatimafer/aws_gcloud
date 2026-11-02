@@ -18,7 +18,7 @@ import argparse
 import logging
 from datetime import datetime
 
-from utilities import (open_json_file,
+from utilities import (open_json_file, GCS,
                        procesar_archivos_en_carpeta, upload_file_s3, process_gcloud_storage, search_files_in_folder
                         , configurar_logger, delete_file_s3, read_query, execute_bq,execute_redshift)
 
@@ -43,6 +43,8 @@ if __name__ == "__main__":
         bucket = targets[target]["bucket"]
         formats = targets[target]["output_formats"]
 
+        gcs = GCS(bucket) if target == "GCS" else None
+
         for format in formats.keys():
             carpeta = formats[format]["carpeta"]
             bucket_folder = formats[format]["folder"]
@@ -51,9 +53,10 @@ if __name__ == "__main__":
             log_file = configurar_logger(carpeta, fecha)
             logging.info("Conversion log will be saved in: %s", log_file)
 
-            if args.action != "create":
+            if args.action == "delete":
                 delete_file_s3(bucket, bucket_folder) if target == "s3" else None
-                process_gcloud_storage(bucket, bucket_folder, args.action) if target == "GCS" else None
+                # process_gcloud_storage(bucket, bucket_folder, args.action) if target == "GCS" else None
+                gcs.delete_file(bucket_folder) if target == "GCS" else None
 
             else:
                 folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
@@ -66,7 +69,8 @@ if __name__ == "__main__":
                     nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
                     upload_file_s3(ruta_salida, bucket, nombre_objeto) if target == "s3" else None
-                    process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto) if target == "GCS" else None
+                    # process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto) if target == "GCS" else None
+                    gcs.upload_file(nombre_objeto, ruta_salida) if target == "GCS" else None
 
 
     qy_folder = 'Scripts_sql'

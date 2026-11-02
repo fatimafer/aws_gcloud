@@ -2,7 +2,7 @@ import os
 import argparse
 import logging
 from datetime import datetime
-from utilities import procesar_archivos_en_carpeta, process_gcloud_storage, search_files_in_folder, configurar_logger
+from utilities import procesar_archivos_en_carpeta, process_gcloud_storage, search_files_in_folder, configurar_logger, GCS
 
 #Ejecutar con
 # set GCLOUD_PROJECT=coral-cloud
@@ -37,6 +37,5 @@ if __name__ == "__main__":
 
         nombre_objeto = os.path.join(folder, os.path.basename(ruta_salida))
 
-        action = None
-
-        process_gcloud_storage(args.bucket, ruta_salida, action, nombre_objeto)
+        gcs = GCS(args.bucket)
+        gcs.upload_file(nombre_objeto, ruta_salida)
