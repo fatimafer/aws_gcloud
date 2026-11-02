@@ -98,7 +98,7 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
     return local_output_dir, ruta_salida
 
 
-def process_gcloud_storage(bucket_name, source_file_name=None, destination_blob_name=None, action=None, fecha=None):
+def process_gcloud_storage(bucket_name, source_file_name=None, destination_blob_name=None, action=None):
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
 
@@ -133,7 +133,7 @@ def process_s3(file_name, bucket, object_name=None):
     return True
 
 
-def search_files_in_folder(bucket_folder, source_folder, file_date):
+def search_files_in_folder(bucket_folder, source_folder):
     folder = bucket_folder + "_hotelbookings/"
 
     sufijo = "guests.csv" if bucket_folder == "Guests" else "reservations.csv"
@@ -142,9 +142,6 @@ def search_files_in_folder(bucket_folder, source_folder, file_date):
     if not archivos_csv:
         logging.warning("No se encontraron archivos .csv en %s", source_folder)
         exit(0)
-
-    log_file = configurar_logger(source_folder, file_date)
-    logging.info("Log de conversión guardado en: %s", log_file)
 
     return folder, archivos_csv
 

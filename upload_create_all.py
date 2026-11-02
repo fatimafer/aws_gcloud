@@ -37,7 +37,10 @@ if __name__ == "__main__":
                 bucket_folder = formats[format]["folder"]
                 is_parquet = carpeta.endswith("parquet")
 
-                folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta, fecha)
+                log_file = configurar_logger(carpeta, fecha)
+                logging.info("Log de conversión será guardado en: %s", log_file)
+
+                folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
 
                 for archivo_csv in archivos_csv:
                     parquet_dir, ruta_salida = procesar_archivos_en_carpeta(carpeta, archivo_csv, delimiter, encoding
@@ -61,8 +64,9 @@ if __name__ == "__main__":
                             logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))
 
         elif args.action != "create" and target == "GCS":
-            configurar_logger(formats["CSV"]["carpeta"], fecha)
-            process_gcloud_storage(bucket, args.action, fecha)
+            log_file = configurar_logger(formats["CSV"]["carpeta"], fecha)
+            logging.info("Log de conversión será guardado en: %s", log_file)
+            process_gcloud_storage(bucket, args.action)
 
 
 
