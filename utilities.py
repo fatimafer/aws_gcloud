@@ -98,7 +98,7 @@ def procesar_archivos_en_carpeta(input_folder, archivo, delimiter=",", encoding=
     return local_output_dir, ruta_salida
 
 
-def process_gcloud_storage(bucket_name, source_file_name=None, destination_blob_name=None, action=None):
+def process_gcloud_storage(bucket_name, source_file_name,  action=None, destination_blob_name=None):
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
 
@@ -115,8 +115,8 @@ def process_gcloud_storage(bucket_name, source_file_name=None, destination_blob_
         blobs = storage_client.list_blobs(bucket.name)
         for blob in blobs:
             blob = bucket.blob(blob.name)
-            logging.info(f"Blob {blob} will be deleted.")
-            blob.delete()
+            logging.info(f"Blob {blob.name} will be deleted.") if blob.name.lower().startswith(source_file_name.lower()) else None
+            blob.delete() if blob.name.lower().startswith(source_file_name.lower()) else None
 
 
 def process_s3(file_name, bucket, object_name=None):

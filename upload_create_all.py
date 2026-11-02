@@ -55,9 +55,13 @@ if __name__ == "__main__":
 
             if args.action != "create":
                 if target == "GCS":
-                    process_gcloud_storage(bucket, args.action)
+                    try:
+                        process_gcloud_storage(bucket, bucket_folder, args.action)
+                        logging.info("Archivos borrados en Google Cloud Storage: %s", bucket)
+                    except Exception  as e:
+                        logging.error("Error al borrar en Cloud Storage: %s", str(e))
 
-            else:
+            elif args.action == "create":
                 folder, archivos_csv = search_files_in_folder(bucket_folder, carpeta)
 
                 for archivo_csv in archivos_csv:
@@ -76,7 +80,7 @@ if __name__ == "__main__":
 
                     if target == "GCS":
                         try:
-                            if process_gcloud_storage(bucket, ruta_salida, nombre_objeto, args.action):
+                            if process_gcloud_storage(bucket, ruta_salida, args.action, nombre_objeto):
                                 logging.info("Archivo subido a Google Cloud Storage: %s/%s", bucket, nombre_objeto)
                         except Exception as e:
                             logging.error("Error al subir el archivo a Cloud Storage: %s", str(e))
