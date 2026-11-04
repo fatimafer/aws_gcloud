@@ -7,7 +7,7 @@ OPTIONS (location = 'europe-southwest1');
 
 -- 2. Carga del Parquet en una tabla intermedia. 
 --    El esquema sale del propio fichero: 17 columnas de texto con los nombres originales.
-DROP TABLE IF EXISTS `coral-cloud-510013.coral_cloud_demo.stg_reservations_deluxe`;
+DROP TABLE IF EXISTS coral_cloud_demo.stg_reservations_deluxe;
 LOAD DATA OVERWRITE coral_cloud_demo.stg_reservations_deluxe
 FROM FILES (
   format = 'PARQUET',

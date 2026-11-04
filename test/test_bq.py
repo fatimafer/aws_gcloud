@@ -5,9 +5,7 @@ from google.cloud import bigquery
 
 client = bigquery.Client()
 
-QUERY = (
-f"""SELECT DISTINCT room_type FROM coral_cloud_demo.reservations_premium;
-""")
+QUERY = (f"SET @@location = 'europe-southwest1'; SELECT DISTINCT room_type FROM coral_cloud_demo.reservations_premium;")
 query_job = client.query(QUERY)  # API request
 
 try:
