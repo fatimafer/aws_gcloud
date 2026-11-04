@@ -1,0 +1,1 @@
+set "AWS_CONFIG_FILE=.aws\config" && set "AWS_SHARED_CREDENTIALS_FILE=.aws\credentials" && set "AWS_PROFILE=default" && set "GCLOUD_PROJECT=[aquí introducimos el id de proyecto]" && set "GOOGLE_APPLICATION_CREDENTIALS=.gcloud\adc.json" && python upload_delete_all.py --action create
