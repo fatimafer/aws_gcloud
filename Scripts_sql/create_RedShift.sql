@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS coral_cloud_demo.reservations_premium (
     booking_channel     VARCHAR(64),
     creation_date       DATE,
     last_modified_date  DATE,
+    last_modified_ts    TIMESTAMP,      -- Columna incremental para Data 360 (DateTime): GETDATE() en UTC
     source_system       VARCHAR(64),
     PRIMARY KEY (reservation_id)
 );
@@ -76,7 +77,9 @@ SELECT
     CAST(number_of_children AS INTEGER),
     booking_channel,
     TO_DATE(creation_date, 'MM/DD/YYYY'),
-    TO_DATE(last_modified_date, 'MM/DD/YYYY')
+    TO_DATE(last_modified_date, 'MM/DD/YYYY'),
+    GETDATE(),                              -- Inicio de la sentencia: la misma hora para toda la carga
+    'Amazon Redshift'
 FROM coral_cloud_demo.reservations_suite;
 
 -- 6. Quitar la tabla intermedia

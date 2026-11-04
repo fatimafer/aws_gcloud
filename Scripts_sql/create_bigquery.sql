@@ -7,6 +7,7 @@ OPTIONS (location = 'europe-southwest1');
 
 -- 2. Carga del Parquet en una tabla intermedia. 
 --    El esquema sale del propio fichero: 17 columnas de texto con los nombres originales.
+DROP TABLE IF EXISTS `coral-cloud-510013.coral_cloud_demo.stg_reservations_deluxe`;
 LOAD DATA OVERWRITE coral_cloud_demo.stg_reservations_deluxe
 FROM FILES (
   format = 'PARQUET',
@@ -32,7 +33,11 @@ SELECT
   CAST(`Number of Children` AS INT64)           AS number_of_children,
   `Booking Channel`                             AS booking_channel,
   PARSE_DATE('%m/%d/%Y', `Creation Date`)       AS creation_date,
-  PARSE_DATE('%m/%d/%Y', `Last Modified Date`)  AS last_modified_date
+  PARSE_DATE('%m/%d/%Y', `Last Modified Date`)  AS last_modified_date,
+    -- Columna incremental para Data 360: hora UTC de la carga, sin zona horaria y truncada
+  -- a segundos, con el mismo formato que GETDATE() en Redshift. DATETIME llega como DateTime.
+  DATETIME_TRUNC(CURRENT_DATETIME('UTC'), SECOND) AS last_modified_ts,
+  'Google BigQuery'                             AS source_system
 FROM coral_cloud_demo.stg_reservations_deluxe;
 
 -- 4. Quitar la tabla intermedia, para que Data 360 solo vea la tabla final
