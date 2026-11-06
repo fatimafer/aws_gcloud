@@ -13,5 +13,5 @@
 /.aws/redshift.json
 /.gcloud/
 /.gcloud/adc.json
-create_launcher.bat
-delete_launcher.bat
+win_create_launcher.bat
+win_delete_launcher.bat
