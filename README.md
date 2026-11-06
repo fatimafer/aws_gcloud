@@ -3,5 +3,10 @@ Este repositorio contiene unos archivos de credenciales que muestran ejemplos de
 
 También se incluyen dos archivos .bat que sirven como ejemplo de lanzadores del script.
 
-1. Para subir incluir la id de proyecto en gcloud en el lanzador de ejemplo [create_launcher.bat](win_create_launcher.bat).
-2. Para borrar ejecutar el lanzador de ejemplo [delete_launcher.bat](win_delete_launcher.bat).
+1. Para subir incluir la id de proyecto en gcloud en los lanzadores de ejemplo:
+   * [win_create_launcher.bat](win_create_launcher.bat)
+   * [linux_create_launcher.sh](linux_create_launcher.sh)
+   
+2. Para borrar ejecutar los lanzadores de ejemplo también con la id de proyecto en gcloud:
+   * [win_delete_launcher.bat](win_delete_launcher.bat)
+   * [linux_delete_launcher.sh](linux_delete_launcher.sh)
