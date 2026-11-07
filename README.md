@@ -5,6 +5,8 @@ https://github.com/fatimafer/DC_objects.git
 Para ello, es necesario disponer de credenciales de acceso a los servicios de Google Cloud y AWS. 
 También es necesario tener activadas instancias de BigQuery y Redshift en los servicios de Google Cloud y AWS respectivamente.
 
+Es necesario incluir los nombres de los buckets de S3 y de los datasets de BigQuery en el json [parameters.json](parameters.json).
+
 Este repositorio contiene unos archivos de credenciales que muestran ejemplos de como preparar las credenciales en un entorno Cloud.
 **En ningún caso, se trata de credenciales reales**
 
