@@ -18,9 +18,9 @@ import argparse
 import logging
 from datetime import datetime
 
-from utilities import (open_json_file, GCS,
-                       process_files_in_folder, upload_file_s3, search_files_in_folder
-                        , configure_logger, delete_file_s3, read_query, execute_bq, execute_redshift)
+from utilities import (open_json_file, GCS, s3,
+                       process_files_in_folder, search_files_in_folder
+                        , configure_logger, read_query, execute_bq, execute_redshift)
 
 if __name__ == "__main__":
 
@@ -45,13 +45,17 @@ if __name__ == "__main__":
     # Definir las plataformas cloud de destino
     targets = params["TARGETS"]
 
+    log_file = configure_logger("log", date)
+    logging.info("Conversion log will be saved in: %s", log_file)
+
     for target in targets.keys():
 
         # Obtener el bucket y los formatos de salida para la plataforma actual
         bucket = targets[target]["bucket"]
         formats = targets[target]["output_formats"]
 
-        # Inicializar el cliente de Google Cloud Storage si el destino es GCS
+        # Inicializar el cliente del bucket según la plataforma cloud
+        s3 = s3(bucket) if target == "s3" else None
         gcs = GCS(bucket) if target == "GCS" else None
 
         for format in formats.keys():
@@ -64,11 +68,11 @@ if __name__ == "__main__":
             is_parquet = origin_dir.endswith("parquet")
 
             # Configurar el logger para la carpeta de origen y la fecha actual
-            log_file = configure_logger(origin_dir, date)
-            logging.info("Conversion log will be saved in: %s", log_file)
+            # log_file = configure_logger(origin_dir, date)
+            # logging.info("Conversion log will be saved in: %s", log_file)
 
             if args.action == "delete":
-                delete_file_s3(bucket, record_type) if target == "s3" else None
+                s3.delete_file_s3(record_type) if target == "s3" else None
                 gcs.delete_file(record_type) if target == "GCS" else None
 
             else:
@@ -85,7 +89,7 @@ if __name__ == "__main__":
                     object_name_in_bucket = os.path.join(bucket_folder, os.path.basename(converted_file))
 
                     # Subir el archivo convertido a la plataforma cloud correspondiente
-                    upload_file_s3(converted_file, bucket, object_name_in_bucket) if target == "s3" else None
+                    s3.upload_file_s3(converted_file, object_name_in_bucket) if target == "s3" else None
                     gcs.upload_file(object_name_in_bucket, converted_file) if target == "GCS" else None
 
 

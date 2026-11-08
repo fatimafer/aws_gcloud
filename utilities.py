@@ -138,49 +138,46 @@ def process_files_in_folder(input_folder, file, delimiter=",", encoding="utf-8"
     return local_output_dir, output_file_name
 
 
-def upload_file_s3(file_name, bucket, object_name=None):
-    # Si no se proporciona un nombre de objeto, se utiliza el nombre del archivo como nombre de objeto
-    try:
+class s3(object):
+
+    # Inicializamos la clase s3 con el nombre del bucket de Amazon S3
+    def __init__(self, bucket):
+        self.bucket_name = bucket
+
+        try:
+            self.s3_client = boto3.client('s3')
+            self.s3 = boto3.resource('s3')
+            self.bucket = self.s3.Bucket(bucket)
+            logging.info("S3 client created successfully for bucket: %s", bucket)
+        except Exception as e:
+            logging.error("Failed to create S3 client: %s", str(e))
+
+    def upload_file_s3(self, file_name, object_name=None):
+        # Si no se proporciona un nombre de objeto, se utiliza el nombre del archivo como nombre de objeto
+
         if object_name is None:
             object_name = os.path.basename(file_name)
-
-        # Subimos el archivo al bucket de S3 utilizando el cliente de boto3
-        s3_client = boto3.client('s3')
-        logging.info("S3 client created successfully for bucket: %s", bucket)
-    except Exception  as e:
-        logging.error("Failed to create S3 client: %s", str(e))
-        return
-
-    try:
-        s3_client.upload_file(file_name, bucket, object_name)
-        logging.info("Files uploaded to s3: %s/%s", bucket, object_name)
-    except Exception as e:
-        logging.error("Failed to upload files to s3: %s", str(e))
+        try:
+            self.s3_client.upload_file(file_name, self.bucket_name, object_name)
+            logging.info("Files uploaded to s3: %s/%s", self.bucket_name, object_name)
+        except Exception as e:
+            logging.error("Failed to upload files to s3: %s", str(e))
 
 
-def delete_file_s3(bucket_name, source_file_name):
+    def delete_file_s3(self, source_file_name):
+        try:
+            for object_summary in self.bucket.objects.all():
+                # Listamos los objetos en el bucket que no sean "directorios" (objetos vacíos cuya clave termina en "/")
+                if object_summary.key.endswith('/'):
+                    continue
+                # Verificamos si el nombre del objeto en S3 coincide con el nombre del archivo que queremos eliminar
+                if object_summary.key.lower().startswith(source_file_name.lower()):
+                    logging.info(f"File {object_summary.key} will be deleted")
+                    object_summary.delete()
+                    logging.info("Files successfully deleted in s3: %s", self.bucket_name)
+        except Exception as e:
+            logging.error("Failed to delete files in s3: %s", str(e))
 
-    # Inicializamos el recurso de S3 utilizando boto3
-    try:
-        s3 = boto3.resource('s3')
-        bucket = s3.Bucket(bucket_name)
-        logging.info("S3 resource created successfully for bucket: %s", bucket_name)
-    except Exception  as e:
-        logging.error("Failed to create S3 resource: %s", str(e))
-        return
-
-    try:
-        for object_summary in bucket.objects.all():
-            # Listamos los objetos en el bucket que no sean "directorios" (objetos vacíos cuya clave termina en "/")
-            if object_summary.key.endswith('/'):
-                continue
-            # Verificamos si el nombre del objeto en S3 coincide con el nombre del archivo que queremos eliminar
-            if object_summary.key.lower().startswith(source_file_name.lower()):
-                logging.info(f"File {object_summary.key} will be deleted")
-                object_summary.delete()
-                logging.info("Files successfully deleted in s3: %s", bucket)
-    except Exception as e:
-        logging.error("Failed to delete files in s3: %s", str(e))
 
 
 class GCS(object):
