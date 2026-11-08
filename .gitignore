@@ -15,4 +15,4 @@
 /.gcloud/adc.json
 win_create_launcher.bat
 win_delete_launcher.bat
-old_scripts_w_arguments/
+/old_scripts_w_arguments/
