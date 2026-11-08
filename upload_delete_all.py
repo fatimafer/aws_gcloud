@@ -90,8 +90,6 @@ if __name__ == "__main__":
 
     # Configurar el logger para la carpeta de scripts SQL y la fecha actual
     qy_folder = 'Scripts_sql'
-    log_file = configure_logger(qy_folder, date)
-    logging.info("Conversion log will be saved in: %s", log_file)
 
     #Ejecutar la acción en BigQuery
     QUERY = read_query(args.action, "bigquery", qy_folder)
