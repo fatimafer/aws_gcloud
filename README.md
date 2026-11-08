@@ -1,4 +1,4 @@
-# Subida de datos a Google Cloud y AWS
+# PASO 1: Subida de datos a Google Cloud y AWS
 
 
 El propósito de este Repositorio es subir datos a Google Cloud y AWS que luego serán utilizados en los siguientes repositorios de DataCloud:
