@@ -39,6 +39,9 @@ if __name__ == "__main__":
 
     params = open_json_file(parameters="parameters.json")
 
+    # Definir la carpeta de origen de scripts SQL
+    qy_folder = 'Scripts_sql'
+
     # Definir las plataformas cloud de destino
     targets = params["TARGETS"]
 
@@ -86,23 +89,17 @@ if __name__ == "__main__":
                     gcs.upload_file(object_name_in_bucket, converted_file) if target == "GCS" else None
 
 
-    # Ejecutar scripts SQL en BigQuery y Redshift
+            # Subimos o borramos a las Data Warehouses Redshift o BigQuery según el destino.
+            # Solo se sube si el archivo está en formato .parquet
+            if is_parquet is True:
 
-    # Configurar el logger para la carpeta de scripts SQL y la fecha actual
-    qy_folder = 'Scripts_sql'
+                # Cargar la consulta SQL correspondente
+                QUERY = read_query(args.action, ("RedShift" if target == "s3" else "bigquery"), qy_folder)
 
-    #Ejecutar la acción en BigQuery
-    QUERY = read_query(args.action, "bigquery", qy_folder)
-    execute_bq(QUERY, args.action)
+                # Ejecutar la consulta SQL en Redshift o BigQuery según el destino
+                execute_redshift(".aws/redshift.json", QUERY, args.action) if target == "s3" else None
+                execute_bq(QUERY, args.action) if target == "GCS" else None
 
 
-    # Ejecutar la acción en Redshift
-    QUERY = read_query(args.action, "RedShift", qy_folder)
-    params = open_json_file(parameters=".aws/redshift.json")
-
-    execute_redshift(params["REDSHIFT_CONNECTION"]["workgroup"], params["REDSHIFT_CONNECTION"]["database"]
-                     , params["REDSHIFT_CONNECTION"]["secret"], QUERY, args.action)
-
-    logging.info("Script finished successfully.")
-
+logging.info("Script finished successfully.")
 

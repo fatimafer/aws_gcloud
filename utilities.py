@@ -249,7 +249,8 @@ def execute_bq(QUERY, action):
         logging.error(f"Error occurred while executing query: {e}")
 
 
-def execute_redshift(workgroup, database, secret, QUERY, action):
+
+def execute_redshift(prm_file, QUERY, action):
 
     # Inicializamos el cliente de Redshift Data API utilizando boto3
     try:
@@ -257,12 +258,15 @@ def execute_redshift(workgroup, database, secret, QUERY, action):
     except Exception as e:
         logging.error(f"Error occurred while creating Redshift client: {e}")
 
+    # Inicializamos los parámetros de conexión
+    params = open_json_file(prm_file)
+
     # Ejecutamos la consulta SQL en Redshift utilizando el cliente de Redshift
     try:
         client.execute_statement(
-            WorkgroupName=workgroup,
-            Database=database,
-            SecretArn=secret,
+            WorkgroupName=params["REDSHIFT_CONNECTION"]["workgroup"],
+            Database=params["REDSHIFT_CONNECTION"]["database"],
+            SecretArn=params["REDSHIFT_CONNECTION"]["secret"],
             Sql=QUERY,
         )
         logging.info("Query executed in Redshift successfully for action: %s", action)
