@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # Definir las plataformas cloud de destino
     targets = params["TARGETS"]
 
-    log_file = configure_logger("log", date)
+    log_file = configure_logger(".", date)
     logging.info("Conversion log will be saved in: %s", log_file)
 
     for target in targets.keys():
