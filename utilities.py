@@ -153,11 +153,12 @@ class s3(object):
             logging.error("Failed to create S3 client: %s", str(e))
 
     def upload_file_s3(self, file_name, object_name=None):
-        # Si no se proporciona un nombre de objeto, se utiliza el nombre del archivo como nombre de objeto
 
+        # Si no se proporciona un nombre de objeto, se utiliza el nombre del archivo como nombre de objeto
         if object_name is None:
             object_name = os.path.basename(file_name)
         try:
+            # Subimos el archivo al bucket de Amazon S3 utilizando el cliente de S3
             self.s3_client.upload_file(file_name, self.bucket_name, object_name)
             logging.info("Files uploaded to s3: %s/%s", self.bucket_name, object_name)
         except Exception as e:
@@ -165,6 +166,7 @@ class s3(object):
 
 
     def delete_file_s3(self, source_file_name):
+
         try:
             for object_summary in self.bucket.objects.all():
                 # Listamos los objetos en el bucket que no sean "directorios" (objetos vacíos cuya clave termina en "/")

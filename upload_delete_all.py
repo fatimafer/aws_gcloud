@@ -67,14 +67,12 @@ if __name__ == "__main__":
             # Determinar si los archivos se convertirán a Parquet o CSV
             is_parquet = origin_dir.endswith("parquet")
 
-            # Configurar el logger para la carpeta de origen y la fecha actual
-            # log_file = configure_logger(origin_dir, date)
-            # logging.info("Conversion log will be saved in: %s", log_file)
-
+            # Si la acción es "delete", eliminamos los archivos de la plataforma cloud
             if args.action == "delete":
                 s3.delete_file_s3(record_type) if target == "s3" else None
                 gcs.delete_file(record_type) if target == "GCS" else None
 
+            # Si la acción es "create", buscamos los archivos en la carpeta de origen, los procesamos y los subimos a la plataforma cloud correspondiente
             else:
 
                 # Buscar archivos en la carpeta de origen
