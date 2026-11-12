@@ -76,10 +76,13 @@ if __name__ == "__main__":
             else:
 
                 # Buscar archivos en la carpeta de origen
-                bucket_folder, raw_files = search_files_in_folder(record_type, origin_dir)
+                raw_files = search_files_in_folder(record_type, origin_dir)
+                # Generar la ruta de la carpeta en el bucket de destino
+                bucket_folder = record_type + "_hotelbookings/"
 
-                # Realizamos las transformaciones
+
                 for raw_file in raw_files:
+                    # Realizamos las transformaciones
                     conversion_dir, converted_file = process_files_in_folder(origin_dir, raw_file, delimiter, encoding
                                                                              , record_type, is_parquet, date, move_processed=False)
                     logging.info("Files saved in: %s", conversion_dir)

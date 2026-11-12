@@ -47,20 +47,17 @@ def move_file(source, target):
     os.makedirs(os.path.dirname(target), exist_ok=True)
     shutil.move(source, target)
 
-def search_files_in_folder(bucket_folder, source_folder):
-
-    # Generar la ruta de la carpeta en el bucket de destino
-    folder = bucket_folder + "_hotelbookings/"
+def search_files_in_folder(record_type, source_folder):
 
     # Buscar archivos .csv en la carpeta de origen que coincidan con el tipo de registro correspondiente
-    sufijo = "guests.csv" if bucket_folder == "Guests" else "reservations.csv"
+    sufijo = "guests.csv" if record_type == "Guests" else "reservations.csv"
     archivos_csv = [f for f in os.listdir(source_folder) if f.lower().endswith(sufijo)]
 
     if not archivos_csv:
         logging.warning("No se encontraron archivos .csv en %s", source_folder)
         exit(0)
 
-    return folder, archivos_csv
+    return archivos_csv
 
 
 def process_files_in_folder(input_folder, file, delimiter=",", encoding="utf-8"
