@@ -2,6 +2,7 @@
     "TARGETS": {
             "s3": {
                     "bucket": "coral-cloud-demo-reservations" ,
+                    "segment": "Vip-Next-season_VIP-Customers",
                     "output_formats": {
                                         "CSV": {
                                                   "origin_dir": "conversion_dat_csv",
@@ -15,6 +16,7 @@
                 },
             "GCS": {
                               "bucket": "coral-cloud-demo" ,
+                              "segment": "INPUT_Data_360_segments",
                               "output_formats": {
                                                   "CSV": {
                                                             "origin_dir": "conversion_dat_csv",

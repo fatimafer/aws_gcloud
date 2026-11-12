@@ -11,6 +11,10 @@ https://github.com/fatimafer/DC_objects.git
 Es necesario disponer de credenciales de acceso a los servicios de Google Cloud y AWS. 
 También es necesario tener activadas instancias de BigQuery y Redshift en los servicios de Google Cloud y AWS respectivamente.
 
+Además, es necesario crear, dentro de los Buckets predeterminados los directorios con los siguientes nombres:
+* Vip-Next-season_VIP-Customers dentro del bucket escogido para trabajar con s3.
+* INPUT_Data_360_segments dentro del Bucket escogido para trabajar con GCS.
+
 ## Preparación de las credenciales
 * Es necesario incluir los nombres de los buckets de S3 y de los datasets de BigQuery en el json [parameters.json](parameters.json).
 

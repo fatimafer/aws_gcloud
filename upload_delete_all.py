@@ -69,8 +69,8 @@ if __name__ == "__main__":
 
             # Si la acción es "delete", eliminamos los archivos de la plataforma cloud
             if args.action == "delete":
-                s3.delete_file_s3(record_type) if target == "s3" else None
-                gcs.delete_file(record_type) if target == "GCS" else None
+                for file in [record_type, targets[target]["segment"]]: s3.delete_file_s3(file) if target == "s3" else None
+                for file in [record_type, targets[target]["segment"]]: gcs.delete_file(file) if target == "GCS" else None
 
             # Si la acción es "create", buscamos los archivos en la carpeta de origen, los procesamos y los subimos a la plataforma cloud correspondiente
             else:

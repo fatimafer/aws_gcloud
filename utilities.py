@@ -170,7 +170,7 @@ class s3(object):
                 if object_summary.key.endswith('/'):
                     continue
                 # Verificamos si el nombre del objeto en S3 coincide con el nombre del archivo que queremos eliminar
-                if object_summary.key.lower().startswith(source_file_name.lower()):
+                if object_summary.key.lower().startswith(source_file_name.lower()) and not object_summary.key.endswith("/"):
                     logging.info(f"File {object_summary.key} will be deleted")
                     object_summary.delete()
                     logging.info("Files successfully deleted in s3: %s", self.bucket_name)
@@ -214,7 +214,7 @@ class GCS(object):
                 blob = self.bucket.blob(blob.name)
 
                 # Verificamos si el nombre del blob coincide con el nombre del archivo que queremos eliminar
-                if blob.name.lower().startswith(bucket_folder.lower()):
+                if blob.name.lower().startswith(bucket_folder.lower()) and not blob.name.endswith("/"):
                     logging.info(f"File {blob.name} will be deleted.")
                     blob.delete()
                     logging.info("Files successfully deleted in Google Cloud Storage: %s", self.bucket.name)
