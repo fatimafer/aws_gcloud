@@ -121,7 +121,7 @@ def process_files_in_folder(input_folder, file, delimiter=",", encoding="utf-8"
             )
 
 
-        logging.info(f"CONVERTIDO: {file} -> {output_file_name}")
+        logging.info(f"CONVERTED: {file} -> {output_file_name}")
 
         # Movemos el archivo procesado a la carpeta de procesados si se especifica move_processed=True
         move_file(source_dir, os.path.join(processed_dir, file)) if move_processed == True else None
